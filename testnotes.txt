@@ -1,0 +1,2 @@
+1. make sure BallFinder.py if-else block for ball_found is a small enough difference to consider the ball targeted.
+2. check ALL twist commands and adjust for desired speeds.
