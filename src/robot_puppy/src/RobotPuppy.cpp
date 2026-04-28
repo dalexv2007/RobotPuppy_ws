@@ -1,6 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "robot_puppy/msg/ball_location.hpp"
+#include "robot_puppy/pid_controller.hpp"
 
 class RobotPuppyNode : public rclcpp::Node {
 public:
@@ -47,10 +48,11 @@ private:
     double ball_bearing_ = 0.0; // hold targeting data
     double ball_distance_ = 0.0;
     bool ball_found_ = false;
-    int bearing_goal = 125;
+    double bearing_goal_ = 125;
+    double dt = 0.1; // Assuming control loop runs every 100ms
 
-    pid_controller bearing_pid_; // PID controller for bearing
-    pid_controller distance_pid_; // PID controller for distance
+    PIDController bearing_pid_; // PID controller for bearing
+    PIDController distance_pid_; // PID controller for distance
 
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_; //velo pub
     rclcpp::Subscription<robot_puppy::msg::BallLocation>::SharedPtr ball_sub_; //ball lo sub
@@ -59,6 +61,8 @@ private:
 
     void control_loop() {
         geometry_msgs::msg::Twist twist_cmd; // pub'd twist msg as twist_cmd
+        double dist_error = std::abs(params_.approach_distance_goal - ball_distance_); //calculate distance error for PID
+        double bearing_error = std::abs(bearing_goal_ - ball_bearing_); //calculate bearing error for PID
 
         switch (current_state_) { //switch for FSM
             case State::SEARCH: 
@@ -67,17 +71,20 @@ private:
                 if(ball_found_) {
                     twist_cmd.angular.z = 0.0; //stop rotating
                     current_state_ = State::APPROACH; //switch to approach state when ball found
-                }
+                } 
                 break;
 
             case State::APPROACH:
-                double dt = 0.1; // Assuming control loop runs every 100ms
                 // PID compute returns the control output directly
-                twist_cmd.angular.z = bearing_pid_.compute(bearing_goal - ball_bearing_, dt);
+                twist_cmd.angular.z = bearing_pid_.compute(bearing_goal_ - ball_bearing_, dt);
                 twist_cmd.linear.x = distance_pid_.compute(params_.approach_distance_goal - ball_distance_, dt);
-
-                if (ball_distance_ > 0 && ball_distance_ <= params_.approach_distance_goal) { //if within approach distance, switch to kick
+                
+                if(!ball_found_){
+                    current_state_ = State::SEARCH; //if ball lost, go back to search
+                }
+                else if (dist_error < 0.1 && bearing_error < 15.0) { //if within approach distance, switch to kick
                     twist_cmd.linear.x = 0.0; //stop forward movement
+                    twist_cmd.angular.z = 0.0; //stop rotation
                     current_state_ = State::KICK;
                     kick_start_time_ = this->now(); //record the time we started kicking
                 }
