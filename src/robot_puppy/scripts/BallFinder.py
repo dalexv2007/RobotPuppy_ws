@@ -83,8 +83,8 @@ class Robot(Node):
                 ball_location.distance = float(distance) #if good, store distance in message casted to float
 
             cv2.line(image, (avg_x, 0), (avg_x, height), (255, 0, 0), 2) #draw vertical blue line at avg_x to show ball center
-            
-            if abs(avg_x - image_center) < 30 and ball_location.distance > 0: #if ball close to center, set as found
+
+            if ball_location.distance > 0: #if ball close to center, set as found
                 ball_location.found = True
             else:
                 ball_location.found = False

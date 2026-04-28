@@ -21,6 +21,11 @@ ament_target_dependencies(robot_puppy_node
   sensor_msgs
   cv_bridge
 )
+
+target_include_directories(robot_puppy_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
+)
+
 rosidl_target_interfaces(robot_puppy_node
   ${PROJECT_NAME}
   "rosidl_typesupport_cpp"
