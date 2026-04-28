@@ -1,7 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "assn4/msg/ball_location.hpp"
-// TODO: Include your custom BallLocation message header here
+#include "robot_puppy/msg/ball_location.hpp"
 
 class RobotPuppyNode : public rclcpp::Node {
 public:
@@ -22,28 +21,32 @@ public:
     }
 
 private:
-
     enum class State { SEARCH, APPROACH, KICK };
     State current_state_;
 
-    double ball_bearing_ = 0.0; //where ball_location data gets assigned
+    double ball_bearing_ = 0.0; // hold targeting data
     double ball_distance_ = 0.0;
     bool ball_targeted_ = false;
-    
-    // --- ROS 2 Interfaces ---
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_; //publisher for velocity commands
-    rclcpp::Subscription<your_package::msg::BallLocation>::SharedPtr ball_sub_; //subscriber for ball location data
-    rclcpp::TimerBase::SharedPtr timer_; //timer for control loop
 
-    // --- The Main Logic ---
+    pid_controller bearind_pid_; // PID controller for bearing
+    pid_controller distance_pid_; // PID controller for distance
+
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_; //velo pub
+    rclcpp::Subscription<your_package::msg::BallLocation>::SharedPtr ball_sub_; //ball lo sub
+    rclcpp::TimerBase::SharedPtr timer_; //timer for control loop
+    rclcpp::Time kick_start_time_; //time point for kick timing
+
     void control_loop() {
-        geometry_msgs::msg::Twist twist_cmd; //twist_cmd name of message of type Twist, which is the message type for velocity commands
+        geometry_msgs::msg::Twist twist_cmd; // pub'd twist msg as twist_cmd
 
         switch (current_state_) { //switch for FSM
             case State::SEARCH: 
                 twist_cmd.linear.x = 0.0; //ensure no forward movement
+
+// **********************TEST AND DEBUG ANGULAR VELO********************                
                 twist_cmd.angular.z = 0.5; //rotate in place
                 
+
                 if(ball_targeted_) {
                     twist_cmd.linear.z = 0.0; //stop rotating, may not be necessary gotta check that
                     current_state_ = State::APPROACH; //switch to approach state when ball found
@@ -51,9 +54,10 @@ private:
                 break;
 
             case State::APPROACH:
-                // TODO: Calculate PID values using ball_bearing_ and ball_distance_.
-                // Assign results to twist_cmd.linear.x and twist_cmd.angular.z.
-                // If errors are small enough, change current_state_ to KICK.
+                double dt = 0.1; // Assuming control loop runs every 100ms
+                bearind_pid.compute(ball_bearing_, dt); //angular PID call
+                distance_pid.compute(ball_distance_, dt); //linear PID call
+                
                 break;
 
             case State::KICK:
