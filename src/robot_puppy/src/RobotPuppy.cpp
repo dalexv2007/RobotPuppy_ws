@@ -34,11 +34,11 @@ private:
         int kick_duration_ms = 3000;         // milliseconds - how long to kick
         
         // PID gains for bearing (angular velocity)
-        double bearing_kp = -0.01, bearing_ki = 0.0, bearing_kd = 0.0;
+        double bearing_kp = 0.01, bearing_ki = 0.0, bearing_kd = 0.0;
         double bearing_limit = 1.0;          // max rad/s
         
         // PID gains for distance (linear velocity)
-        double distance_kp = -0.5, distance_ki = 0.0, distance_kd = 0.0;
+        double distance_kp = 0.5, distance_ki = 0.0, distance_kd = 0.0;
         double distance_limit = 0.5;         // max m/s
     } params_;
 
@@ -77,7 +77,7 @@ private:
             case State::APPROACH:
                 // PID compute returns the control output directly
                 twist_cmd.angular.z = bearing_pid_.compute(bearing_goal_ - ball_bearing_, dt);
-                twist_cmd.linear.x = distance_pid_.compute(params_.approach_distance_goal - ball_distance_, dt);
+                twist_cmd.linear.x = distance_pid_.compute(ball_distance_ - params_.approach_distance_goal, dt);
                 
                 if(!ball_found_){
                     current_state_ = State::SEARCH; //if ball lost, go back to search
