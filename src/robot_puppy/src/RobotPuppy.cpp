@@ -34,11 +34,11 @@ private:
         int kick_duration_ms = 3000;         // milliseconds - how long to kick
         
         // PID gains for bearing (angular velocity)
-        double bearing_kp = 0.01, bearing_ki = 0.0, bearing_kd = 0.0;
+        double bearing_kp = -0.01, bearing_ki = 0.0, bearing_kd = 0.0;
         double bearing_limit = 1.0;          // max rad/s
         
         // PID gains for distance (linear velocity)
-        double distance_kp = 0.5, distance_ki = 0.0, distance_kd = 0.0;
+        double distance_kp = -0.5, distance_ki = 0.0, distance_kd = 0.0;
         double distance_limit = 0.5;         // max m/s
     } params_;
 
