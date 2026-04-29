@@ -39,8 +39,4 @@ install(PROGRAMS scripts/BallFinder.py
   RENAME BallFinder
 )
 
-install(DIRECTORY launch/
-  DESTINATION share/${PROJECT_NAME}/launch
-)
-
 ament_package()
