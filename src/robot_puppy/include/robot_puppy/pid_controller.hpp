@@ -9,7 +9,7 @@ public:
         : kp_(kp), ki_(ki), kd_(kd), limit_(limit), integral_sum_(0.0), last_error_(0.0) {}
 
     double compute(double error, double dt) { //main output func
-        double p_term = kp_ * error; // P = comparison of current error to desired state
+        double p_term = -kp_ * error; // P = comparison of current error to desired state
 
         integral_sum_ += error * dt;
         integral_sum_ = std::clamp(integral_sum_, -10.0, 10.0); 
