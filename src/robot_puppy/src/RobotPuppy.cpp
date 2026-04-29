@@ -9,7 +9,7 @@ public:
     RobotPuppyNode() : Node("robot_puppy"), 
         current_state_(State::SEARCH),
         bearing_pid_(params_.bearing_kp, params_.bearing_ki, params_.bearing_kd, params_.bearing_limit),
-        distance_pid_(params_.distance_kp, params_.distance_ki, params_.distance_kd, params_.distance_limit) { //this node's called "robot_puppy"
+        distance_pid_(params_.distance_kp, params_.distance_ki, params_.distance_kd, params_.distance_limit) {
 
         cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10); //publisher for velocity
         ball_sub_ = this->create_subscription<robot_puppy::msg::BallLocation>( //subscriber to ball location topic ball_finder

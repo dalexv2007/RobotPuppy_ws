@@ -16,6 +16,8 @@ class Robot(Node):
         self.bridge = CvBridge()
         self.raw_image = []
         self.ranges = []
+        self.distance_history = []  # Initialize the list
+        self.buffer_size = 5        # Set a buffer size for your moving average
 
         self.loc_publisher = self.create_publisher(BallLocation, '/ball_location', 10) #(type, topic, queue)
         self.im_publisher = self.create_publisher(Image, '/ball_image', 10) # publisher for modified image
@@ -42,6 +44,7 @@ class Robot(Node):
             print("Unable to convert ROS image to OpenCV format.")
 
     def handle_scan(self, msg): 
+        self.scan_msg = msg
         self.ranges = msg.ranges # store scan data in self.ranges for use in main loop
 
     def main_loop(self):
@@ -55,6 +58,8 @@ class Robot(Node):
         upper_yellow = np.array([30, 255, 255])
 
         mask = cv2.inRange(hsv, lower_yellow, upper_yellow) #mask (binaryImage, lowBound, upBound), returns binary image where pixels in range are 255 and others are 0
+        hfov = 80
+
         height, width = mask.shape
         mask[0:int(0.2*height), :] = 0 #ignore top 20% of image to avoid ceiling
         mask[int(0.8*height):, :] = 0 #ignore bottom 20% of image to avoid floor
@@ -70,18 +75,22 @@ class Robot(Node):
 
         else: #if pixels found...
             avg_x = int(np.mean(yellow_cols)) #calculate average column index of yellow pixels... this is the "center" of the ball in the image
-            ball_location.bearing = avg_x #convert to bearing
+            ball_location.bearing = avg_x
+            center_x = width/2
 
-            scan_index = 335 - int(avg_x * 115 / 250)
-            scan_index = max(0, min(scan_index, len(self.ranges)-1)) #ensure scan index is within bounds of self.ranges
+            scan_index = int(223 - (avg_x * 76 / 250))
+            scan_index = max(147, min(scan_index, 223))
 
             distance = self.ranges[scan_index] #store distance for validity check
 
             if np.isnan(distance) or np.isinf(distance): #ensure distance is valid number, if not set to -1.0 to indicate invalid distance
                 ball_location.distance = -1.0
             else:
-                ball_location.distance = float(distance) #if good, store distance in message casted to float
-
+                self.distance_history.append(float(distance)) #add distance to history
+                if len(self.distance_history) > self.buffer_size: #if history exceeds buffer size, remove oldest measurement
+                    self.distance_history.pop(0)
+                ball_location.distance = np.mean(self.distance_history) #set distance to average of history for
+                
             cv2.line(image, (avg_x, 0), (avg_x, height), (255, 0, 0), 2) #draw vertical blue line at avg_x to show ball center
 
             if ball_location.distance > 0: #if ball close to center, set as found
