@@ -14,7 +14,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 ament_export_dependencies(rosidl_default_runtime)
-ament_python_install_package(${PROJECT_NAME})
 
 add_executable(robot_puppy_node src/RobotPuppy.cpp)
 ament_target_dependencies(robot_puppy_node
@@ -28,10 +27,8 @@ target_include_directories(robot_puppy_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-rosidl_target_interfaces(robot_puppy_node
-  ${PROJECT_NAME}
-  "rosidl_typesupport_cpp"
-)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(robot_puppy_node ${cpp_typesupport_target})
 
 install(TARGETS robot_puppy_node
   DESTINATION lib/${PROJECT_NAME}
